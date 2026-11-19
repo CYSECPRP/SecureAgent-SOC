@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" width="1280" height="360" role="img" aria-labelledby="title desc">
+  <title id="title">SecureAgent-SOC: Automated Multi-Agent SOC Framework</title>
+  <desc id="desc">A shield holding a manager agent, four specialist agents and a quality checker. Every alert passes through input sanitizing, attack-path checking, critique, signed evidence and human approval.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="0.55" stop-color="#0b1620"/>
+      <stop offset="1" stop-color="#062027"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#00ffff" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#00ffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00ffff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#00ffff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#00ffff" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#00ffff" stroke-opacity="0.055"/>
+    </pattern>
+    <clipPath id="shield-inside">
+      <path d="M210 90 L286 118 V176 C286 228 255 264 210 281 C165 264 134 228 134 176 V118 Z"/>
+    </clipPath>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <style>
+    .sans { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    .mono { font-family: "Cascadia Code", Consolas, "SFMono-Regular", Menlo, "Liberation Mono", monospace; }
+    .flow { stroke-dasharray: 3 7; animation: flow 1.2s linear infinite; }
+    .pulse { animation: pulse 2.4s ease-in-out infinite; }
+    .p2 { animation-delay: 0.3s; }
+    .p3 { animation-delay: 0.6s; }
+    .p4 { animation-delay: 0.9s; }
+    .scan { animation: scan 3.6s ease-in-out infinite alternate; }
+    .caret { animation: blink 1.1s steps(1) infinite; }
+    .dot { animation: travel 4.5s linear infinite; }
+    .hl { opacity: 0; animation: step 6s ease-in-out infinite; }
+    .s2 .hl { animation-delay: 1.2s; }
+    .s3 .hl { animation-delay: 2.4s; }
+    .s4 .hl { animation-delay: 3.6s; }
+    .s5 .hl { animation-delay: 4.8s; }
+    @keyframes flow { to { stroke-dashoffset: -20; } }
+    @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    @keyframes scan { from { transform: translateY(0); } to { transform: translateY(196px); } }
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes travel {
+      0% { transform: translateX(0); opacity: 0; }
+      8%, 92% { opacity: 1; }
+      100% { transform: translateX(500px); opacity: 0; }
+    }
+    @keyframes step { 0%, 24%, 100% { opacity: 0; } 6%, 16% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; }
+    }
+  </style>
+
+  <rect width="1280" height="360" rx="20" fill="url(#bg)"/>
+  <rect width="1280" height="360" rx="20" fill="url(#grid)"/>
+  <rect x="0.5" y="0.5" width="1279" height="359" rx="20" fill="none" stroke="#00ffff" stroke-opacity="0.18"/>
+  <g fill="none" stroke="#00ffff" stroke-opacity="0.5" stroke-width="2">
+    <path d="M28 60V28H60"/>
+    <path d="M1220 28H1252V60"/>
+    <path d="M28 300V332H60"/>
+    <path d="M1252 300V332H1220"/>
+  </g>
+
+  <circle cx="210" cy="186" r="175" fill="url(#halo)"/>
+  <g>
+    <path d="M210 72 L302 106 V176 C302 238 264 280 210 300 C156 280 118 238 118 176 V106 Z" fill="#00ffff" fill-opacity="0.04" stroke="#00ffff" stroke-width="3" stroke-linejoin="round" filter="url(#glow)"/>
+    <path d="M210 90 L286 118 V176 C286 228 255 264 210 281 C165 264 134 228 134 176 V118 Z" fill="none" stroke="#00ffff" stroke-opacity="0.3" stroke-width="1.5"/>
+    <g clip-path="url(#shield-inside)">
+      <rect class="scan" x="134" y="88" width="152" height="3" fill="url(#beam)"/>
+    </g>
+    <g stroke="#00ffff" stroke-opacity="0.55" stroke-width="1.6">
+      <line class="flow" x1="210" y1="134" x2="164" y2="194"/>
+      <line class="flow" x1="210" y1="134" x2="195" y2="194"/>
+      <line class="flow" x1="210" y1="134" x2="225" y2="194"/>
+      <line class="flow" x1="210" y1="134" x2="256" y2="194"/>
+      <line class="flow" x1="164" y1="194" x2="210" y2="250"/>
+      <line class="flow" x1="195" y1="194" x2="210" y2="250"/>
+      <line class="flow" x1="225" y1="194" x2="210" y2="250"/>
+      <line class="flow" x1="256" y1="194" x2="210" y2="250"/>
+    </g>
+    <circle cx="210" cy="134" r="9" fill="#00ffff" filter="url(#glow)"/>
+    <g fill="#0d1117" stroke="#00ffff" stroke-width="2">
+      <circle class="pulse" cx="164" cy="194" r="6.5"/>
+      <circle class="pulse p2" cx="195" cy="194" r="6.5"/>
+      <circle class="pulse p3" cx="225" cy="194" r="6.5"/>
+      <circle class="pulse p4" cx="256" cy="194" r="6.5"/>
+    </g>
+    <rect x="202" y="242" width="16" height="16" rx="3" transform="rotate(45 210 250)" fill="#00ffff" filter="url(#glow)"/>
+  </g>
+
+  <text class="mono" x="358" y="110" font-size="15" letter-spacing="2" fill="#00ffff">&gt; FINAL-YEAR PROJECT 2026-27 · GROUP 12<tspan class="caret">_</tspan></text>
+  <text class="sans" x="356" y="178" font-size="60" font-weight="700" fill="#e6edf3">SecureAgent<tspan fill="#00ffff">-SOC</tspan></text>
+  <text class="sans" x="358" y="220" font-size="25" fill="#9fb3c8">Automated Multi-Agent SOC Framework</text>
+  <text class="mono" x="358" y="274" font-size="15" fill="#8b949e">ingest<tspan fill="#00ffff"> → </tspan>sanitize<tspan fill="#00ffff"> → </tspan>investigate<tspan fill="#00ffff"> → </tspan>verify<tspan fill="#00ffff"> → </tspan>decide<tspan fill="#00ffff"> → </tspan>prove</text>
+  <line x1="358" y1="296" x2="862" y2="296" stroke="#00ffff" stroke-opacity="0.15" stroke-width="2"/>
+  <circle class="dot" cx="360" cy="296" r="3.5" fill="#00ffff" filter="url(#glow)"/>
+
+  <text class="mono" x="985" y="100" font-size="12" letter-spacing="3" fill="#8b949e">EVERY STEP CHECKED</text>
+  <line x1="1003" y1="131" x2="1003" y2="291" stroke="#00ffff" stroke-opacity="0.2" stroke-width="1.5"/>
+  <g class="mono" font-size="13">
+    <g class="s1">
+      <rect x="985" y="116" width="245" height="30" rx="8" fill="#0d1117" stroke="#1d3d47"/>
+      <rect class="hl" x="985" y="116" width="245" height="30" rx="8" fill="#00ffff" fill-opacity="0.08" stroke="#00ffff"/>
+      <circle cx="1003" cy="131" r="4" fill="#00ffff"/>
+      <text x="1018" y="135.5" fill="#00ffff">SC1</text>
+      <text x="1062" y="135.5" fill="#c9d1d9">sanitize input</text>
+    </g>
+    <g class="s2">
+      <rect x="985" y="156" width="245" height="30" rx="8" fill="#0d1117" stroke="#1d3d47"/>
+      <rect class="hl" x="985" y="156" width="245" height="30" rx="8" fill="#00ffff" fill-opacity="0.08" stroke="#00ffff"/>
+      <circle cx="1003" cy="171" r="4" fill="#00ffff"/>
+      <text x="1018" y="175.5" fill="#00ffff">N1</text>
+      <text x="1062" y="175.5" fill="#c9d1d9">check attack path</text>
+    </g>
+    <g class="s3">
+      <rect x="985" y="196" width="245" height="30" rx="8" fill="#0d1117" stroke="#1d3d47"/>
+      <rect class="hl" x="985" y="196" width="245" height="30" rx="8" fill="#00ffff" fill-opacity="0.08" stroke="#00ffff"/>
+      <circle cx="1003" cy="211" r="4" fill="#00ffff"/>
+      <text x="1018" y="215.5" fill="#00ffff">N2</text>
+      <text x="1062" y="215.5" fill="#c9d1d9">challenge answer</text>
+    </g>
+    <g class="s4">
+      <rect x="985" y="236" width="245" height="30" rx="8" fill="#0d1117" stroke="#1d3d47"/>
+      <rect class="hl" x="985" y="236" width="245" height="30" rx="8" fill="#00ffff" fill-opacity="0.08" stroke="#00ffff"/>
+      <circle cx="1003" cy="251" r="4" fill="#00ffff"/>
+      <text x="1018" y="255.5" fill="#00ffff">N4</text>
+      <text x="1062" y="255.5" fill="#c9d1d9">sign evidence</text>
+    </g>
+    <g class="s5">
+      <rect x="985" y="276" width="245" height="30" rx="8" fill="#0d1117" stroke="#1d3d47"/>
+      <rect class="hl" x="985" y="276" width="245" height="30" rx="8" fill="#00ffff" fill-opacity="0.08" stroke="#00ffff"/>
+      <circle cx="1003" cy="291" r="4" fill="#00ffff"/>
+      <text x="1018" y="295.5" fill="#00ffff">GATE</text>
+      <text x="1062" y="295.5" fill="#c9d1d9">human approves</text>
+    </g>
+  </g>
+</svg>
