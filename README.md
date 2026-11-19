@@ -106,26 +106,24 @@ An example story: a fake email with a hidden instruction moves through the syste
 ```mermaid
 sequenceDiagram
     autonumber
-    participant E as Email
     participant S as SC1
     participant M as Manager
     participant A as Agents
-    participant G as N1 Graph
-    participant C as N2 Critic
+    participant X as N1 + N2
     participant Q as Quality Checker
     participant H as Analyst
     participant R as N5 Rules
-    E->>S: Hidden text: "ignore your rules"
+    Note over S: Email hides "ignore your rules"
     S->>M: Clean case, hidden order removed
-    M->>A: Split the work (SC2: own tools only)
-    A->>G: Claim: Laptop-12 reached Server-3
-    G-->>A: Rejected, no such path
-    A->>C: Corrected answer and evidence
-    C-->>A: Is the link really harmful?
-    A->>C: Proof from threat intel
-    C->>Q: Answer holds up
+    M->>A: Split the work (SC2: own tools)
+    A->>X: Claim: Laptop-12 reached Server-3
+    X-->>A: N1: rejected, no such path
+    A->>X: Corrected answer and evidence
+    X-->>A: N2: is the link really harmful?
+    A->>X: Proof from threat intel
+    X->>Q: Answer holds up
     Q->>H: High risk, approval needed
-    H->>H: Reads the reasoning, approves the block
+    H->>H: Reads the reasoning, approves
     H->>R: Confirmed incident
     R->>R: Draft, lint, replay on old logs
     R->>H: Tested rule
