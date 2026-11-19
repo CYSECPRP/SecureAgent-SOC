@@ -1,0 +1,54 @@
+name: Feature or task
+description: Propose a feature or track a piece of roadmap work
+title: "[Task]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Roadmap stage
+      description: See docs/STAGE_BY_STAGE_MASTER_PLAN.md
+      options:
+        - "Stage 0: Scaffolding and infrastructure"
+        - "Stage 1: Data collection, SC1 and Red-Team Lab"
+        - "Stage 2: Deterministic verification (N1, N3, N4, OPA)"
+        - "Stage 3: Specialist agent swarm and N2 critique"
+        - "Stage 4: Governance, XAI and N5 auto-rule"
+        - "Stage 5: Analyst dashboard"
+        - "Stage 6: Demonstration and benchmarking"
+        - Not tied to a stage
+    validations:
+      required: true
+
+  - type: dropdown
+    id: methods
+    attributes:
+      label: Methods or controls involved
+      multiple: true
+      options:
+        - "N1: Graph Check"
+        - "N2: Critique Agent"
+        - "N3: Agent Watchdog"
+        - "N4: Signed Evidence Ledger"
+        - "N5: Auto Rule Generator"
+        - "SC1: Sanitizer and taint tracker"
+        - "SC2: Tool authorizer (OPA)"
+        - "SC3: Memory provenance guard"
+        - No specific method
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be built or changed, and why?
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: How will we know it is finished? Tests, metrics or demo steps.
+      placeholder: |
+        - [ ] Unit tests in backend/tests/
+        - [ ] Scenario works in the attack simulator
