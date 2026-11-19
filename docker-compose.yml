@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: secureagent-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-secureagent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secureagent_secret_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-secureagent_soc}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secureagent -d secureagent_soc"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: secureagent-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:v1.11.0
+    container_name: secureagent-qdrant
+    restart: always
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  opa:
+    image: openpolicyagent/opa:0.68.0
+    container_name: secureagent-opa
+    restart: always
+    ports:
+      - "8181:8181"
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "/policies"
+    volumes:
+      - ./backend/src/security/opa_policies:/policies:ro
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
