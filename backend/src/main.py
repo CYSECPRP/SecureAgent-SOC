@@ -30,11 +30,15 @@ logger = logging.getLogger("secureagent.main")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Initializing SecureAgent-SOC services...")
-    # Initialize DB tables
-    try:
-        await init_db()
-    except Exception as e:
-        logger.warning(f"Database initialization deferred (waiting for Postgres container): {e}")
+    if not settings.api_keys:
+        logger.warning("API_KEYS is empty: the API accepts requests without a key. Set API_KEYS before exposing it.")
+
+    # Initialize DB tables (production uses Alembic migrations instead)
+    if settings.AUTO_CREATE_TABLES:
+        try:
+            await init_db()
+        except Exception as e:
+            logger.warning(f"Database initialization deferred (waiting for Postgres container): {e}")
 
     # Warm up Redis
     try:

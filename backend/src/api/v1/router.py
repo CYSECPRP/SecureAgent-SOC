@@ -25,6 +25,8 @@ from src.models.schemas import (
     AlertIngestBatch,
 )
 from src.security.sanitizer import InputSanitizer
+from src.security.auth import require_api_key
+from src.security.rate_limit import limit_ingest_rate
 
 logger = logging.getLogger("secureagent.api")
 api_v1_router = APIRouter()
@@ -101,6 +103,7 @@ async def health_check(
     response_model=AlertIngestResponse,
     status_code=status.HTTP_201_CREATED,
     tags=["Ingestion"],
+    dependencies=[Depends(require_api_key), Depends(limit_ingest_rate)],
 )
 async def ingest_alert(
     alert_in: AlertCreate,
@@ -193,6 +196,7 @@ async def ingest_alert(
     "/alerts",
     response_model=List[AlertRead],
     tags=["Alerts"],
+    dependencies=[Depends(require_api_key)],
 )
 async def list_alerts(
     limit: int = Query(50, ge=1, le=500),
@@ -211,6 +215,7 @@ async def list_alerts(
 @api_v1_router.get(
     "/alerts/count",
     tags=["Alerts"],
+    dependencies=[Depends(require_api_key)],
 )
 async def get_alerts_count(db: AsyncSession = Depends(get_db)):
     """Count total ingested alerts in PostgreSQL."""
