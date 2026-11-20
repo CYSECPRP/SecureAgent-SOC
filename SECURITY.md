@@ -27,3 +27,5 @@ Findings that bypass the agent defences, such as a prompt injection that gets pa
 ## Development defaults
 
 `docker-compose.yml`, `.env.example` and `backend/src/config.py` contain development defaults such as the database password and the secret key. They are public on purpose so the project runs out of the box. Change them before you expose any service beyond your own machine.
+
+The production setup enforces this: with `ENVIRONMENT=production` the API refuses to start if the secret key or database password is a development default, if no API keys are set, or if debug mode is on. Use `deploy/init-env.sh` to create random secrets.

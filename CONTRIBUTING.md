@@ -4,7 +4,9 @@ Thank you for helping. SecureAgent-SOC is a four-person university research proj
 
 ## Set up
 
-You need Python 3.12, Docker with Compose v2 and [Git LFS](https://git-lfs.com). The `Makefile` targets assume Linux, macOS or WSL.
+The quickest way is [GitHub Codespaces](https://codespaces.new/CYSECPRP/SecureAgent-SOC?quickstart=1): it installs everything and starts the services for you.
+
+On your own computer you need Python 3.12, Docker with Compose v2 and [Git LFS](https://git-lfs.com). The `Makefile` targets assume Linux, macOS or WSL.
 
 ```bash
 git lfs install
@@ -40,7 +42,22 @@ The same tests run on every push and pull request in [GitHub Actions](.github/wo
 
 - Python follows [PEP 8](https://peps.python.org/pep-0008/), with type hints on new functions.
 - Keep FastAPI routes thin and put the logic in modules under `backend/src/`.
+- New endpoints need `Depends(require_api_key)` unless they must stay public like `/api/v1/health`.
 - Never commit secrets. `.env` is ignored by Git; put safe defaults in `.env.example`.
+
+## Packages and database changes
+
+- Add packages to `requirements.txt`, then rebuild the lock file that Docker and CI install from (same for `attack_simulator/`):
+
+  ```bash
+  uv pip compile backend/requirements.txt --universal --python-version 3.12 --generate-hashes -o backend/requirements.lock
+  ```
+
+- After changing `backend/src/models/database.py`, add a migration with `make up` running, review the generated file and commit it:
+
+  ```bash
+  cd backend && ../.venv/bin/alembic revision --autogenerate -m "describe the change"
+  ```
 
 ## Data
 

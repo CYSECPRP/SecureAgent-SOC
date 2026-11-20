@@ -13,6 +13,7 @@
 [![Final-year project 2026-27](https://img.shields.io/badge/project-final--year%202026--27-00FFFF?style=flat-square&labelColor=0d1117)](#team)
 [![DSU CSE (Cyber Security)](https://img.shields.io/badge/DSU-CSE%20%28Cyber%20Security%29-00FFFF?style=flat-square&labelColor=0d1117)](#team)
 [![License: MIT](https://img.shields.io/badge/license-MIT-00FFFF?style=flat-square&labelColor=0d1117)](LICENSE)
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Codespaces-open-00FFFF?style=flat-square&labelColor=0d1117&logo=github&logoColor=00FFFF)](https://codespaces.new/CYSECPRP/SecureAgent-SOC?quickstart=1)
 
 [![Wazuh: SIEM](https://img.shields.io/badge/Wazuh-SIEM-161b22?style=flat-square&labelColor=0d1117&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDBGRkZGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI%2BPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iOSIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjQuNSIvPjxwYXRoIGQ9Ik0xMiAxMiAxOC41IDUuNSIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEiIGZpbGw9IiMwMEZGRkYiLz48L3N2Zz4=)](https://wazuh.com)
 [![Suricata: IDS](https://img.shields.io/badge/Suricata-IDS-161b22?style=flat-square&labelColor=0d1117&logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDBGRkZGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yIDEyczMuNi03IDEwLTcgMTAgNyAxMCA3LTMuNiA3LTEwIDdTMiAxMiAyIDEyeiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiLz48L3N2Zz4=)](https://suricata.io)
@@ -28,7 +29,7 @@
 [![React + TypeScript: dashboard (planned)](https://img.shields.io/badge/React%20%2B%20TypeScript-dashboard%20%28planned%29-161b22?style=flat-square&labelColor=0d1117&logo=react&logoColor=00FFFF)](https://react.dev)
 [![VirusTotal: threat intel](https://img.shields.io/badge/VirusTotal-threat%20intel-161b22?style=flat-square&labelColor=0d1117&logo=virustotal&logoColor=00FFFF)](https://www.virustotal.com)
 
-[Overview](#overview) · [What works today](#what-works-today) · [Quick start](#quick-start) · [Architecture](#architecture) · [Background methods](#background-methods-n1-to-n5) · [Formal foundations](#formal-foundations) · [Data](#data) · [Roadmap](#roadmap) · [Evaluation](#evaluation-plan) · [Team](#team)
+[Overview](#overview) · [What works today](#what-works-today) · [Quick start](#quick-start) · [Deploy](#deploy) · [Architecture](#architecture) · [Background methods](#background-methods-n1-to-n5) · [Formal foundations](#formal-foundations) · [Data](#data) · [Roadmap](#roadmap) · [Evaluation](#evaluation-plan) · [Team](#team)
 
 </div>
 
@@ -56,21 +57,26 @@ Each of these ideas exists on its own. The value of SecureAgent-SOC is joining p
 
 These parts are built, run locally and are tested in CI on every push.
 
-| Part | What it does now | Code |
-| --- | --- | --- |
-| **Ingest API** | `POST /api/v1/ingest` fingerprints each alert with SHA-256, drops repeats seen in the last 10 minutes, runs SC1, stores the alert in PostgreSQL and queues it in Redis. Critical alerts and alerts with $\tau \ge 0.8$ go to the priority queue. | [`router.py`](backend/src/api/v1/router.py) |
-| **SC1 Input Sanitizer** | Nine prompt-injection signatures plus a check for instructions hidden in base64. Untrusted text is wrapped in `[UNTRUSTED_CONTENT]` tags (spotlighting) and every alert gets a taint score $\tau$. | [`sanitizer.py`](backend/src/security/sanitizer.py) |
-| **SC2 policies (OPA)** | Each agent may call only its own tools. Containment tools (isolate a host, block an IP, disable an account, revoke a session) need $\tau \le 0.40$ or human approval. | [`opa_policies/`](backend/src/security/opa_policies/) |
-| **Storage** | PostgreSQL tables for alerts, incidents, evidence, the ledger, agent metrics and generated rules. Qdrant collections `soc_alerts` and `soc_rules` (384 dimensions). | [`models/`](backend/src/models/), [`knowledge/`](backend/src/knowledge/) |
-| **Data pipeline** | Six parsers turn six public datasets into 91,263 alerts in one format, split 70/15/15 with a fixed seed. | [`data/`](data/) |
-| **Red-Team Lab** | Streamlit app that fires real attacks at the API and shows how the defences react. | [`attack_simulator/`](attack_simulator/app.py) |
-| **Tests** | 14 pytest tests against real PostgreSQL, Redis and OPA services, run by GitHub Actions. | [`backend/tests/`](backend/tests/) |
+| Part                    | What it does now                                                                                                                                                                                                                                 | Code                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| **Ingest API**          | `POST /api/v1/ingest` fingerprints each alert with SHA-256, drops repeats seen in the last 10 minutes, runs SC1, stores the alert in PostgreSQL and queues it in Redis. Critical alerts and alerts with $\tau \ge 0.8$ go to the priority queue. | [`router.py`](backend/src/api/v1/router.py)                                |
+| **SC1 Input Sanitizer** | Nine prompt-injection signatures plus a check for instructions hidden in base64. Untrusted text is wrapped in `[UNTRUSTED_CONTENT]` tags (spotlighting) and every alert gets a taint score $\tau$.                                               | [`sanitizer.py`](backend/src/security/sanitizer.py)                        |
+| **SC2 policies (OPA)**  | Each agent may call only its own tools. Containment tools (isolate a host, block an IP, disable an account, revoke a session) need $\tau \le 0.40$ or human approval.                                                                            | [`opa_policies/`](backend/src/security/opa_policies/)                      |
+| **Storage**             | PostgreSQL tables for alerts, incidents, evidence, the ledger, agent metrics and generated rules. Qdrant collections `soc_alerts` and `soc_rules` (384 dimensions).                                                                              | [`models/`](backend/src/models/), [`knowledge/`](backend/src/knowledge/)   |
+| **Data pipeline**       | Six parsers turn six public datasets into 91,263 alerts in one format, split 70/15/15 with a fixed seed.                                                                                                                                         | [`data/`](data/)                                                           |
+| **Red-Team Lab**        | Streamlit app that fires real attacks at the API and shows how the defences react.                                                                                                                                                               | [`attack_simulator/`](attack_simulator/app.py)                             |
+| **Tests**               | 26 pytest tests against real PostgreSQL, Redis and OPA services, run by GitHub Actions.                                                                                                                                                          | [`backend/tests/`](backend/tests/)                                         |
+| **Production setup**    | Docker images, HTTPS through Caddy, API keys, a rate limit on ingest, database migrations and backups. CI starts the whole stack on every push and checks it.                                                                                    | [`docker-compose.prod.yml`](docker-compose.prod.yml), [`deploy/`](deploy/) |
 
 Not built yet: the LangGraph agents on Qwen3, SC3, N1 to N5 and the analyst dashboard (Stages 2 to 5).
 
 ## Quick start
 
-You need Docker, Python 3.12 and [Git LFS](https://git-lfs.com). The `make` targets work on Linux, macOS and WSL.
+**No install:** [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/CYSECPRP/SecureAgent-SOC?quickstart=1)
+
+The codespace installs everything and starts PostgreSQL, Redis, Qdrant and OPA. Run `make dev` and `make sim` in two terminals, and the API and the Red-Team Lab open in your browser. The free GitHub plan includes 120 core hours of Codespaces a month (about 60 hours on the default 2-core machine), and an idle codespace stops on its own.
+
+**On your computer:** you need Docker, Python 3.12 and [Git LFS](https://git-lfs.com). The `make` targets work on Linux, macOS and WSL.
 
 ```bash
 git lfs install
@@ -115,22 +121,59 @@ curl -s -X POST http://localhost:8000/api/v1/ingest \
 
 The answer has `"taint_score": 1.0`, `"is_injection_detected": true` and `"queue_name": "queue:ingestion:priority"`.
 
-| API endpoint | What it does |
-| --- | --- |
-| `GET /api/v1/health` | Status and latency of PostgreSQL, Redis and Qdrant |
-| `POST /api/v1/ingest` | Ingest one alert: deduplicate, sanitize, store and queue it |
-| `GET /api/v1/alerts` | List stored alerts (`limit`, `offset`, `source`) |
-| `GET /api/v1/alerts/count` | Count stored alerts |
+API keys are off for local development. When `API_KEYS` is set, every endpoint except `/api/v1/health` needs the header `X-API-Key: <key>`. The Red-Team Lab and `stream_ingest.py` read the address and key from `SECUREAGENT_API_URL` and `SECUREAGENT_API_KEY`.
 
-| Service | Port |
-| --- | --- |
-| API (FastAPI) | 8000 |
-| Red-Team Lab (Streamlit) | 8501 |
-| PostgreSQL | 5432 |
-| Redis | 6379 |
-| Qdrant | 6333, 6334 |
-| OPA | 8181 |
-| Analyst dashboard (planned) | 5173 |
+| API endpoint               | What it does                                                |
+| -------------------------- | ----------------------------------------------------------- |
+| `GET /api/v1/health`       | Status and latency of PostgreSQL, Redis and Qdrant          |
+| `POST /api/v1/ingest`      | Ingest one alert: deduplicate, sanitize, store and queue it |
+| `GET /api/v1/alerts`       | List stored alerts (`limit`, `offset`, `source`)            |
+| `GET /api/v1/alerts/count` | Count stored alerts                                         |
+
+| Service                     | Port       |
+| --------------------------- | ---------- |
+| API (FastAPI)               | 8000       |
+| Red-Team Lab (Streamlit)    | 8501       |
+| PostgreSQL                  | 5432       |
+| Redis                       | 6379       |
+| Qdrant                      | 6333, 6334 |
+| OPA                         | 8181       |
+| Analyst dashboard (planned) | 5173       |
+
+These ports are for development and are reachable only from your own machine. In production only Caddy is open, on ports 80 and 443.
+
+## Deploy
+
+The production setup runs everything in Docker behind [Caddy](https://caddyserver.com), which gets and renews HTTPS certificates automatically. The databases, OPA and the API stay on a private Docker network.
+
+You need a Linux server with Docker and Git LFS, and a domain name. No domain? Use `<server-ip>.sslip.io`, a free name that points to your server.
+
+```bash
+git lfs install
+git clone https://github.com/CYSECPRP/SecureAgent-SOC.git && cd SecureAgent-SOC
+DOMAIN=203.0.113.10.sslip.io ./deploy/init-env.sh   # writes .env with random secrets and prints the lab password
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Then open `https://<domain>/docs` for the API and `https://lab.<domain>` for the Red-Team Lab (user `analyst`). Sensors send the `API_KEYS` value from `.env` in the `X-API-Key` header. All settings are explained in [`deploy/production.env.example`](deploy/production.env.example).
+
+| Task                                           | Command                                                                                                                                            |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Follow the logs                                | `make prod-logs`                                                                                                                                   |
+| Back up PostgreSQL (keeps the newest 14 dumps) | `make backup`, or daily with cron: `30 2 * * * cd /path/to/SecureAgent-SOC && ./deploy/backup.sh`                                                  |
+| Restore a backup                               | `gunzip -c backups/<file>.sql.gz \| docker compose -f docker-compose.prod.yml exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'` |
+| Load the knowledge base (optional)             | `docker compose -f docker-compose.prod.yml run --rm -v "$PWD/data:/data:ro" api python /data/scripts/seed_database.py`                             |
+| Update to the latest code                      | `git pull && docker compose -f docker-compose.prod.yml up -d --build`                                                                              |
+
+What protects the live system:
+
+- The API refuses to start in production with development secrets, without API keys or with debug mode on.
+- Every endpoint except `/api/v1/health` needs an API key, and `/ingest` allows 600 requests a minute per key by default.
+- The lab sits behind a password, and every service runs as a non-root user with pinned, hash-checked packages.
+- Database changes run as Alembic migrations before the API starts.
+- CI starts this exact stack on every push and checks HTTPS, the API keys, ingest, the lab password, the backup and that only Caddy has open ports.
+
+GitHub itself cannot run the API and databases around the clock. Codespaces is for trying the project; a public live system needs a server like the one above.
 
 ## Architecture
 
@@ -221,24 +264,24 @@ sequenceDiagram
 
 ## Security controls
 
-| Control | Guards | What it stops | Status |
-| --- | --- | --- | --- |
-| **SC1 Input Sanitizer** | Alert and email text, before any AI reads it | Prompt injection: hidden instructions inside alerts or emails | Built |
-| **SC2 Tool Authorizer** | Every tool call (tool allowlisting) | An agent calling a tool it does not need | OPA policies built; connected to the agents in Stage 2 |
-| **SC3 Memory Provenance** | Every write to memory | Memory poisoning: false notes that mislead later decisions | Planned |
-| **Human Approval Gate** | High-risk containment actions | The AI blocking IPs, locking accounts or shutting down servers on its own | OPA rule built; approval screen in Stage 5 |
+| Control                   | Guards                                       | What it stops                                                             | Status                                                 |
+| ------------------------- | -------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **SC1 Input Sanitizer**   | Alert and email text, before any AI reads it | Prompt injection: hidden instructions inside alerts or emails             | Built                                                  |
+| **SC2 Tool Authorizer**   | Every tool call (tool allowlisting)          | An agent calling a tool it does not need                                  | OPA policies built; connected to the agents in Stage 2 |
+| **SC3 Memory Provenance** | Every write to memory                        | Memory poisoning: false notes that mislead later decisions                | Planned                                                |
+| **Human Approval Gate**   | High-risk containment actions                | The AI blocking IPs, locking accounts or shutting down servers on its own | OPA rule built; approval screen in Stage 5             |
 
 ## Background methods (N1 to N5)
 
 Five backend methods make the workflow stronger without changing it. Each one hooks into a box that already exists.
 
-| | Method | In one line | Plugs into | Stage |
-| --- | --- | --- | --- | --- |
-| **N1** | Graph Check | Rejects attack paths that do not exist on the company map | Quality Checker | 2 |
-| **N2** | Critique Agent | A second AI reviewer that challenges the answers, at most 2 rounds | Quality Checker | 3 |
-| **N3** | Agent Watchdog | Learns each agent's normal behaviour and freezes one that acts strangely | All agents and the memory | 2 |
-| **N4** | Signed Evidence Ledger | Hash-chains and signs every reasoning step, so nobody can change old records unnoticed | XAI Engine and dashboard | 2 |
-| **N5** | Auto Rule Generator | Turns a confirmed attack into a tested detection rule | Auto-Learning loop and data sources | 4 |
+|        | Method                 | In one line                                                                            | Plugs into                          | Stage |
+| ------ | ---------------------- | -------------------------------------------------------------------------------------- | ----------------------------------- | ----- |
+| **N1** | Graph Check            | Rejects attack paths that do not exist on the company map                              | Quality Checker                     | 2     |
+| **N2** | Critique Agent         | A second AI reviewer that challenges the answers, at most 2 rounds                     | Quality Checker                     | 3     |
+| **N3** | Agent Watchdog         | Learns each agent's normal behaviour and freezes one that acts strangely               | All agents and the memory           | 2     |
+| **N4** | Signed Evidence Ledger | Hash-chains and signs every reasoning step, so nobody can change old records unnoticed | XAI Engine and dashboard            | 2     |
+| **N5** | Auto Rule Generator    | Turns a confirmed attack into a tested detection rule                                  | Auto-Learning loop and data sources | 4     |
 
 <details>
 <summary><b>N1 Graph Check</b>: stop made-up attack paths</summary>
@@ -415,13 +458,13 @@ The scores behind the design, from the [master plan](docs/STAGE_BY_STAGE_MASTER_
 \tau_{\text{out}} = \max_{j} \tau(x_j) \cdot \left(1 - \delta_{\text{sanitizer}}\right), \qquad \delta_{\text{sanitizer}} = 0.30
 ```
 
-| Input | $\tau$ given by SC1 today |
-| --- | --- |
+| Input                                    | $\tau$ given by SC1 today      |
+| ---------------------------------------- | ------------------------------ |
 | Email text, wrapped in spotlighting tags | $1.0 \times (1 - 0.30) = 0.70$ |
-| Suricata alert | 0.6 |
-| Wazuh or LANL event | 0.1 |
-| Any other source | 0.5 |
-| Any input with a detected injection | 1.0 |
+| Suricata alert                           | 0.6                            |
+| Wazuh or LANL event                      | 0.1                            |
+| Any other source                         | 0.5                            |
+| Any input with a detected injection      | 1.0                            |
 
 OPA blocks the containment tools when $\tau > 0.40$ unless an analyst approves.
 
@@ -437,11 +480,11 @@ OPA blocks the containment tools when $\tau > 0.40$ unless an analyst approves.
 \mathrm{AEI} = w_1 \, T_a(t) + w_2 \left(1 - H(V)\right) + w_3 \left(1 - C_{\text{asset}}\right)
 ```
 
-| AEI | Autonomy level | What happens |
-| --- | --- | --- |
-| $\ge 0.85$ | L0, L1 | Auto-close and log |
-| $0.60$ to $0.85$ | L2, L3 | Escalate to an analyst with a pre-filled report |
-| $< 0.60$, or a critical action | L4 | An analyst must approve |
+| AEI                            | Autonomy level | What happens                                    |
+| ------------------------------ | -------------- | ----------------------------------------------- |
+| $\ge 0.85$                     | L0, L1         | Auto-close and log                              |
+| $0.60$ to $0.85$               | L2, L3         | Escalate to an analyst with a pre-filled report |
+| $< 0.60$, or a critical action | L4             | An analyst must approve                         |
 
 **Asymmetric trust (Stage 4).** Trust is slow to gain and quick to lose ($\alpha_{\text{reward}} = 0.02$, $\alpha_{\text{decay}} = 0.20$):
 
@@ -456,54 +499,54 @@ T_a(t) - \alpha_{\text{decay}} \, T_a(t) & \text{if the analyst overrides the ve
 
 The Streamlit lab ([`attack_simulator/app.py`](attack_simulator/app.py), port 8501) sends attacks to the running API so you can watch the defences react.
 
-| View | What it sends | What it tests |
-| --- | --- | --- |
-| **Attack playground** | Any payload you type | SC1: taint score, detected patterns and target queue |
-| **Scenario 1: AgentDojo injections** | Held-out AgentDojo prompt-injection tasks | SC1 |
-| **Scenario 2: Spear-phishing** | Real phishing emails from the held-out test set | SC1 on email |
-| **Scenario 3: Impossible lateral hop** | A jump between hosts that should be impossible | N1 Graph Check (Stage 2) |
-| **Scenario 5: Alert flood** | A burst of 10 to 200 alerts | Redis deduplication now, N3 Watchdog in Stage 2 |
-| **Live monitor** | Nothing; it reads the API | Stored alerts and their count |
+| View                                   | What it sends                                   | What it tests                                        |
+| -------------------------------------- | ----------------------------------------------- | ---------------------------------------------------- |
+| **Attack playground**                  | Any payload you type                            | SC1: taint score, detected patterns and target queue |
+| **Scenario 1: AgentDojo injections**   | Held-out AgentDojo prompt-injection tasks       | SC1                                                  |
+| **Scenario 2: Spear-phishing**         | Real phishing emails from the held-out test set | SC1 on email                                         |
+| **Scenario 3: Impossible lateral hop** | A jump between hosts that should be impossible  | N1 Graph Check (Stage 2)                             |
+| **Scenario 5: Alert flood**            | A burst of 10 to 200 alerts                     | Redis deduplication now, N3 Watchdog in Stage 2      |
+| **Live monitor**                       | Nothing; it reads the API                       | Stored alerts and their count                        |
 
 Scenario 4 (memory poisoning, for SC3) and a 50-attack batch test are planned.
 
 ## Tech stack
 
-| Part | Technology | Role | Status |
-| --- | --- | --- | --- |
-| SIEM | **Wazuh** | Collects security events from hosts and logs | Parser and sample alerts |
-| IDS | **Suricata** | Watches network traffic for intrusions | Parser and sample alerts |
-| Agent orchestration | **LangGraph** | Runs the swarm of specialised agents | Stage 3 |
-| LLM | **Qwen3** | Powers the agents; no new or additional LLM is planned | Stage 3 (a mock provider for now) |
-| Backend API | **FastAPI** | Ingests and normalises alerts and serves the dashboard | Built |
-| Database | **PostgreSQL** | Cases and memory, and the XAI evidence trace | Built |
-| Cache and queues | **Redis** | Deduplication and the ingestion queues | Built |
-| Vector memory | **Qdrant** | Similar past alerts and rules for the agents | Collections built |
-| Policy engine | **Open Policy Agent** | Tool allowlists and the taint gate (SC2) | Policies built |
-| Red-Team Lab | **Streamlit** | Fires attacks at the API | Built |
-| Services | **Docker Compose** | Runs PostgreSQL, Redis, Qdrant and OPA | Built |
-| Dashboard | **React + TypeScript** | SOC dashboard with the Human Approval Gate | Stage 5 |
-| Threat intelligence | **VirusTotal** | Looks up known-bad files, links and addresses | Stage 3 |
+| Part                | Technology             | Role                                                   | Status                            |
+| ------------------- | ---------------------- | ------------------------------------------------------ | --------------------------------- |
+| SIEM                | **Wazuh**              | Collects security events from hosts and logs           | Parser and sample alerts          |
+| IDS                 | **Suricata**           | Watches network traffic for intrusions                 | Parser and sample alerts          |
+| Agent orchestration | **LangGraph**          | Runs the swarm of specialised agents                   | Stage 3                           |
+| LLM                 | **Qwen3**              | Powers the agents; no new or additional LLM is planned | Stage 3 (a mock provider for now) |
+| Backend API         | **FastAPI**            | Ingests and normalises alerts and serves the dashboard | Built                             |
+| Database            | **PostgreSQL**         | Cases and memory, and the XAI evidence trace           | Built                             |
+| Cache and queues    | **Redis**              | Deduplication and the ingestion queues                 | Built                             |
+| Vector memory       | **Qdrant**             | Similar past alerts and rules for the agents           | Collections built                 |
+| Policy engine       | **Open Policy Agent**  | Tool allowlists and the taint gate (SC2)               | Policies built                    |
+| Red-Team Lab        | **Streamlit**          | Fires attacks at the API                               | Built                             |
+| Services            | **Docker Compose**     | Runs PostgreSQL, Redis, Qdrant and OPA                 | Built                             |
+| Dashboard           | **React + TypeScript** | SOC dashboard with the Human Approval Gate             | Stage 5                           |
+| Threat intelligence | **VirusTotal**         | Looks up known-bad files, links and addresses          | Stage 3                           |
 
 ## Data
 
 Six public datasets are bundled in [`data/`](data/) with Git LFS (44 files, about 535 MB). The parsers turn them into one alert format, and the split script divides them 70/15/15 with seed 42.
 
-| Source | Alerts |
-| --- | ---: |
-| LANL authentication events and red-team labels | 50,000 |
-| NSL-KDD network flows | 22,543 |
-| Phishing emails | 18,631 |
-| Wazuh rule tests | 51 |
-| Suricata EVE alerts | 22 |
-| AgentDojo prompt injections | 16 |
-| **Total** | **91,263** |
+| Source                                         |     Alerts |
+| ---------------------------------------------- | ---------: |
+| LANL authentication events and red-team labels |     50,000 |
+| NSL-KDD network flows                          |     22,543 |
+| Phishing emails                                |     18,631 |
+| Wazuh rule tests                               |         51 |
+| Suricata EVE alerts                            |         22 |
+| AgentDojo prompt injections                    |         16 |
+| **Total**                                      | **91,263** |
 
-| Split | Share | Alerts | Used for |
-| --- | ---: | ---: | --- |
-| Operational | 70% | 63,871 | Streamed into the API by `stream_ingest.py` |
-| Knowledge | 15% | 13,685 | Seeded into Qdrant and Redis by `seed_database.py` |
-| Evaluation | 15% | 13,707 | Held out for testing only |
+| Split       | Share | Alerts | Used for                                           |
+| ----------- | ----: | -----: | -------------------------------------------------- |
+| Operational |   70% | 63,871 | Streamed into the API by `stream_ingest.py`        |
+| Knowledge   |   15% | 13,685 | Seeded into Qdrant and Redis by `seed_database.py` |
+| Evaluation  |   15% | 13,707 | Held out for testing only                          |
 
 Every dataset keeps its publisher's licence. See the [sources and licences table](data/README.md#4-sources-licences-and-citations).
 
@@ -511,15 +554,15 @@ Every dataset keeps its publisher's licence. See the [sources and licences table
 
 The build follows the seven stages of the [master plan](docs/STAGE_BY_STAGE_MASTER_PLAN.md). Each of N1 to N5 comes in the stage where the parts it depends on exist.
 
-| Stage | Focus | Main work | Status |
-| --- | --- | --- | --- |
-| **0** | Scaffolding and infrastructure | Docker services, database models, OPA policies, first tests | **Done** |
+| Stage | Focus                                 | Main work                                                                                                     | Status               |
+| ----- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------- |
+| **0** | Scaffolding and infrastructure        | Docker services, database models, OPA policies, first tests                                                   | **Done**             |
 | **1** | Data collection, SC1 and Red-Team Lab | Parsers and dataset splits, ingest API with Redis deduplication, SC1 sanitizer and taint score, Streamlit lab | **In&nbsp;progress** |
-| **2** | Deterministic checks | **N1** Graph Check, **N3** Agent Watchdog, **N4** Signed Evidence Ledger, SC2 connected to OPA | Planned |
-| **3** | Agent swarm | LangGraph specialists on Qwen3, **N2** Critique Agent, Quality Checker | Planned |
-| **4** | Governance and XAI | Evidence DAG and EGS, AEI autonomy gate with trust updates, **N5** Auto Rule Generator | Planned |
-| **5** | Analyst dashboard | React console with the Evidence DAG, approvals, rules and metrics | Planned |
-| **6** | Demonstration and benchmarks | Dual-screen live demo, 50-attack batch test, ablations of N1 to N5, final metrics | Planned |
+| **2** | Deterministic checks                  | **N1** Graph Check, **N3** Agent Watchdog, **N4** Signed Evidence Ledger, SC2 connected to OPA                | Planned              |
+| **3** | Agent swarm                           | LangGraph specialists on Qwen3, **N2** Critique Agent, Quality Checker                                        | Planned              |
+| **4** | Governance and XAI                    | Evidence DAG and EGS, AEI autonomy gate with trust updates, **N5** Auto Rule Generator                        | Planned              |
+| **5** | Analyst dashboard                     | React console with the Evidence DAG, approvals, rules and metrics                                             | Planned              |
+| **6** | Demonstration and benchmarks          | Dual-screen live demo, 50-attack batch test, ablations of N1 to N5, final metrics                             | Planned              |
 
 Reviews so far: zeroth review (8 Oct 2026) and progress report (6 Nov 2026).
 
@@ -533,25 +576,25 @@ Reviews so far: zeroth review (8 Oct 2026) and progress report (6 Nov 2026).
 
 ## Evaluation plan
 
-| Data | Used for |
-| --- | --- |
+| Data                                        | Used for                                                        |
+| ------------------------------------------- | --------------------------------------------------------------- |
 | **LANL authentication and red-team events** | Lateral-movement triage; the login data also suits the N1 graph |
-| **Phishing emails** | Email (phishing) analysis |
-| **NSL-KDD** | Network intrusion triage |
-| **AgentDojo** | Prompt-injection attacks against the agents |
-| **VirusTotal** | Threat-intelligence lookups |
+| **Phishing emails**                         | Email (phishing) analysis                                       |
+| **NSL-KDD**                                 | Network intrusion triage                                        |
+| **AgentDojo**                               | Prompt-injection attacks against the agents                     |
+| **VirusTotal**                              | Threat-intelligence lookups                                     |
 
 The 15% evaluation split (13,707 alerts) is kept apart for testing.
 
 The main goals are to reduce **false positives** and **analyst workload** while staying fast, transparent and secure. The target metrics:
 
-| Metric | Meaning | Target |
-| --- | --- | --- |
-| **TCR** | Taint containment rate | $\ge 0.95$ |
-| **ASR** | Attack success rate | $\le 0.05$ |
-| **EGS** | Evidence grounding score | $= 1.0$ |
-| **FPR** | False positive rate | $\le 0.05$ |
-| **MTTT** | Mean time to triage | $\le 120$ s |
+| Metric   | Meaning                  | Target      |
+| -------- | ------------------------ | ----------- |
+| **TCR**  | Taint containment rate   | $\ge 0.95$  |
+| **ASR**  | Attack success rate      | $\le 0.05$  |
+| **EGS**  | Evidence grounding score | $= 1.0$     |
+| **FPR**  | False positive rate      | $\le 0.05$  |
+| **MTTT** | Mean time to triage      | $\le 120$ s |
 
 We also plan to measure:
 
@@ -566,6 +609,8 @@ We also plan to measure:
 | N5 Auto Rule Generator    | False alarms of generated rules on old logs, and the analyst approval rate                                           |
 
 ## Research basis
+
+Full titles and links of all 22 papers are in [`docs/references.md`](docs/references.md). Our own [progress report](docs/reports/progress-report-1.pdf) and [survey paper draft](docs/reports/survey-paper-draft.pdf) are in [`docs/reports/`](docs/reports/).
 
 <details>
 <summary>The 22 papers behind the design, and what each one taught us</summary>
@@ -634,28 +679,42 @@ Yes. Clone with `GIT_LFS_SKIP_SMUDGE=1`, then download only the files you need w
 
 </details>
 
+<details>
+<summary>Can it be hosted on GitHub?</summary>
+
+<br>
+
+Partly. GitHub keeps the code and data, runs the tests, and runs the whole app on demand in [Codespaces](https://codespaces.new/CYSECPRP/SecureAgent-SOC?quickstart=1). It cannot keep the API and databases online all the time; for that, use the [Deploy](#deploy) steps on a server.
+
+</details>
+
 ## Repository
 
 ```text
 SecureAgent-SOC/
-├── backend/                  FastAPI service
+├── backend/                  FastAPI service (Dockerfile)
 │   ├── src/
 │   │   ├── api/              health, ingest and alert routes
 │   │   ├── knowledge/        PostgreSQL, Redis and Qdrant clients
 │   │   ├── models/           database tables, schemas and enums
-│   │   ├── security/         SC1 sanitizer and the OPA policies
+│   │   ├── security/         SC1 sanitizer, API keys, rate limit and the OPA policies
 │   │   ├── config.py         settings and thresholds
 │   │   └── main.py           app entry point
+│   ├── migrations/           Alembic database migrations
 │   ├── tests/                pytest suite
-│   └── requirements.txt
-├── attack_simulator/         Streamlit Red-Team Lab
+│   ├── requirements.txt      direct dependencies
+│   └── requirements.lock     exact, hash-checked versions for Docker and CI
+├── attack_simulator/         Streamlit Red-Team Lab (Dockerfile)
 ├── data/                     parsers, pipeline scripts, datasets (Git LFS) and licences
-├── docs/                     master plan, workflow PDF and images
+├── deploy/                   Caddy settings, production settings example, setup and backup scripts
+├── docs/                     master plan, references, reports, workflow PDF and images
 ├── frontend/                 analyst dashboard (planned, Stage 5)
 ├── evaluation/               benchmarks (planned, Stage 6)
-├── .github/                  CI workflow, issue and pull request templates
-├── docker-compose.yml        PostgreSQL, Redis, Qdrant and OPA
-├── Makefile                  up, down, dev, sim, test, clean
+├── .devcontainer/            GitHub Codespaces setup
+├── .github/                  CI workflows, Dependabot, issue and pull request templates
+├── docker-compose.yml        development services: PostgreSQL, Redis, Qdrant and OPA
+├── docker-compose.prod.yml   production stack behind Caddy (HTTPS)
+├── Makefile                  up, down, dev, sim, test, clean, prod-up, prod-down, prod-logs, backup
 ├── .env.example              development defaults
 ├── CONTRIBUTING.md
 ├── SECURITY.md
