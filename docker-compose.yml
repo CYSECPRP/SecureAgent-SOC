@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secureagent_secret_2026}
       POSTGRES_DB: ${POSTGRES_DB:-secureagent_soc}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -24,7 +24,7 @@ services:
     container_name: secureagent-redis
     restart: always
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -38,8 +38,8 @@ services:
     container_name: secureagent-qdrant
     restart: always
     ports:
-      - "6333:6333"
-      - "6334:6334"
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
 
@@ -48,7 +48,7 @@ services:
     container_name: secureagent-opa
     restart: always
     ports:
-      - "8181:8181"
+      - "127.0.0.1:8181:8181"
     command:
       - "run"
       - "--server"

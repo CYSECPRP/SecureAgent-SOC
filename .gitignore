@@ -35,3 +35,4 @@ frontend/.tmp/
 
 # Data & Logs
 *.log
+backups/

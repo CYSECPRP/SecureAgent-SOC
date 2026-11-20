@@ -1,0 +1,152 @@
+# Production stack: Caddy (HTTPS) is the only service with open ports.
+# Setup: DOMAIN=<server-ip>.sslip.io ./deploy/init-env.sh && docker compose -f docker-compose.prod.yml up -d --build
+
+name: secureagent-soc
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-backend-environment: &backend-environment
+  ENVIRONMENT: production
+  DEBUG: "false"
+  SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+  API_KEYS: "${API_KEYS:?Set API_KEYS in .env},${LAB_API_KEY:?Set LAB_API_KEY in .env}"
+  ALLOWED_ORIGINS: '["https://${DOMAIN:?Set DOMAIN in .env}"]'
+  POSTGRES_USER: ${POSTGRES_USER:-secureagent}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  POSTGRES_DB: ${POSTGRES_DB:-secureagent_soc}
+  POSTGRES_SERVER: postgres
+  REDIS_URL: "redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379/0"
+  QDRANT_HOST: qdrant
+  OPA_URL: http://opa:8181
+  AUTO_CREATE_TABLES: "false"
+  RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-600}
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+      LAB_USER: ${LAB_USER:-analyst}
+      LAB_PASSWORD_HASH: ${LAB_PASSWORD_HASH:?Set LAB_PASSWORD_HASH in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      lab:
+        condition: service_started
+    logging: *default-logging
+
+  api:
+    build: ./backend
+    image: secureagent-soc-api:latest
+    restart: unless-stopped
+    environment: *backend-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      opa:
+        condition: service_started
+    logging: *default-logging
+
+  migrate:
+    build: ./backend
+    image: secureagent-soc-api:latest
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    environment: *backend-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *default-logging
+
+  lab:
+    build: ./attack_simulator
+    image: secureagent-soc-lab:latest
+    restart: unless-stopped
+    environment:
+      SECUREAGENT_API_URL: http://api:8000/api/v1
+      SECUREAGENT_API_KEY: ${LAB_API_KEY:?Set LAB_API_KEY in .env}
+    volumes:
+      - ./data/splits/evaluation:/app/data/splits/evaluation:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *default-logging
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-secureagent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-secureagent_soc}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *default-logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    command:
+      [
+        "sh",
+        "-c",
+        'exec redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes',
+      ]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *default-logging
+
+  qdrant:
+    image: qdrant/qdrant:v1.11.0
+    restart: unless-stopped
+    volumes:
+      - qdrant_data:/qdrant/storage
+    logging: *default-logging
+
+  opa:
+    image: openpolicyagent/opa:0.68.0
+    restart: unless-stopped
+    command: ["run", "--server", "--addr=0.0.0.0:8181", "/policies"]
+    volumes:
+      - ./backend/src/security/opa_policies:/policies:ro
+    logging: *default-logging
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  caddy_data:
+  caddy_config:

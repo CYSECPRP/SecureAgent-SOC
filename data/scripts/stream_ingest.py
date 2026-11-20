@@ -19,6 +19,7 @@ import argparse
 import asyncio
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -31,6 +32,10 @@ logger = logging.getLogger("stream_ingest")
 
 DATA_DIR = Path(__file__).resolve().parent.parent
 OPERATIONAL_DIR = DATA_DIR / "splits" / "operational"
+
+API_URL = os.getenv("SECUREAGENT_API_URL", "http://localhost:8000/api/v1").rstrip("/")
+API_KEY = os.getenv("SECUREAGENT_API_KEY", "")
+API_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
 
 STREAM_FILES = {
     "all": OPERATIONAL_DIR / "all_ingest.jsonl",
@@ -46,7 +51,7 @@ async def stream_alerts(
     batch_size: int = 100,
     continuous: bool = False,
     delay_sec: float = 0.5,
-    api_url: str = "http://localhost:8000/api/v1/ingest",
+    api_url: str = f"{API_URL}/ingest",
 ):
     target_file = STREAM_FILES.get(stream_type)
     if not target_file or not target_file.exists():
@@ -60,14 +65,14 @@ async def stream_alerts(
     logger.info("=" * 70)
 
     # Check backend accessibility
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=10.0, headers=API_HEADERS) as client:
         try:
-            health = await client.get("http://localhost:8000/api/v1/health")
+            health = await client.get(f"{API_URL}/health")
             if health.status_code != 200:
                 logger.error(f"Backend unhealthy: {health.text}")
                 return
         except Exception as e:
-            logger.error(f"Cannot reach backend at http://localhost:8000: {e}")
+            logger.error(f"Cannot reach backend at {API_URL}: {e}")
             logger.error("Make sure backend is running with: make dev")
             return
 

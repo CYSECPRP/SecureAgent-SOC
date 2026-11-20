@@ -1,0 +1,27 @@
+# API on https://DOMAIN, Red-Team Lab on https://lab.DOMAIN (password protected).
+# Caddy gets and renews the HTTPS certificates automatically.
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	import security_headers
+	header X-Frame-Options "DENY"
+	reverse_proxy api:8000
+}
+
+lab.{$DOMAIN} {
+	encode zstd gzip
+	import security_headers
+	basic_auth {
+		{$LAB_USER} {$LAB_PASSWORD_HASH}
+	}
+	reverse_proxy lab:8501
+}

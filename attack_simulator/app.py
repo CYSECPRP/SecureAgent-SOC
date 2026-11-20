@@ -12,6 +12,7 @@ Enables evaluators to:
 """
 
 import json
+import os
 import time
 from pathlib import Path
 import httpx
@@ -26,14 +27,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-BACKEND_API = "http://localhost:8000/api/v1"
+BACKEND_API = os.getenv("SECUREAGENT_API_URL", "http://localhost:8000/api/v1").rstrip("/")
+API_KEY = os.getenv("SECUREAGENT_API_KEY", "")
+API_HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 EVAL_DIR = PROJECT_DIR / "data" / "splits" / "evaluation"
 
 
 def check_backend_health():
     try:
-        r = httpx.get(f"{BACKEND_API}/health", timeout=2.0)
+        r = httpx.get(f"{BACKEND_API}/health", headers=API_HEADERS, timeout=2.0)
         return r.status_code == 200, r.json() if r.status_code == 200 else {}
     except Exception as e:
         return False, {"error": str(e)}
@@ -148,7 +151,7 @@ if mode == "Interactive Attack Playground":
                     "user_account": target_account,
                 }
                 try:
-                    resp = httpx.post(f"{BACKEND_API}/ingest", json=payload, timeout=5.0)
+                    resp = httpx.post(f"{BACKEND_API}/ingest", json=payload, headers=API_HEADERS, timeout=5.0)
                     if resp.status_code == 201:
                         data = resp.json()
                         st.success(" Attack Payload Received by Layer 1 Ingest")
@@ -217,7 +220,7 @@ elif mode == "Scenario 1: AgentDojo Prompt Injections":
                 "severity": "critical",
                 "user_account": "executive@enterprise.local",
             }
-            resp = httpx.post(f"{BACKEND_API}/ingest", json=payload, timeout=5.0)
+            resp = httpx.post(f"{BACKEND_API}/ingest", json=payload, headers=API_HEADERS, timeout=5.0)
             if resp.status_code == 201:
                 res_data = resp.json()
                 st.success("Test Case Injected!")
@@ -256,7 +259,7 @@ elif mode == "Scenario 2: Spear-Phishing Campaign":
                 "severity": sample_email["severity"].lower(),
                 "user_account": "victim@enterprise.local",
             }
-            resp = httpx.post(f"{BACKEND_API}/ingest", json=payload, timeout=5.0)
+            resp = httpx.post(f"{BACKEND_API}/ingest", json=payload, headers=API_HEADERS, timeout=5.0)
             if resp.status_code == 201:
                 st.success(f"Email ingested successfully! Assigned Taint $\\tau = {resp.json()['taint_score']}$")
                 st.json(resp.json())
@@ -305,7 +308,7 @@ elif mode == "Scenario 3: Impossible Lateral Hop (N1 Test)":
             "hostname": src_host,
             "user_account": user,
         }
-        resp = httpx.post(f"{BACKEND_API}/ingest", json=payload, timeout=5.0)
+        resp = httpx.post(f"{BACKEND_API}/ingest", json=payload, headers=API_HEADERS, timeout=5.0)
         if resp.status_code == 201:
             st.success(f"Hop alert queued for N1 Graph Verification! Event ID: `{resp.json()['id']}`")
             st.json(resp.json())
@@ -340,7 +343,7 @@ elif mode == "Scenario 5: Alert Flood / DoS (SC1/N3 Test)":
                 "destination_ip": "10.0.1.50",
             }
             try:
-                r = httpx.post(f"{BACKEND_API}/ingest", json=p, timeout=2.0)
+                r = httpx.post(f"{BACKEND_API}/ingest", json=p, headers=API_HEADERS, timeout=2.0)
                 if r.status_code == 201:
                     if r.json().get("is_duplicate"):
                         deduped += 1
@@ -365,10 +368,10 @@ elif mode == "Live Ingestion & Security Monitor":
     st.markdown("Real-time inspection of alerts currently stored in PostgreSQL and Redis queues.")
 
     try:
-        count_resp = httpx.get(f"{BACKEND_API}/alerts/count", timeout=3.0)
+        count_resp = httpx.get(f"{BACKEND_API}/alerts/count", headers=API_HEADERS, timeout=3.0)
         total_alerts = count_resp.json().get("total_alerts", 0) if count_resp.status_code == 200 else 0
         
-        list_resp = httpx.get(f"{BACKEND_API}/alerts?limit=50", timeout=3.0)
+        list_resp = httpx.get(f"{BACKEND_API}/alerts?limit=50", headers=API_HEADERS, timeout=3.0)
         alerts_list = list_resp.json() if list_resp.status_code == 200 else []
 
         c1, c2, c3 = st.columns(3)
