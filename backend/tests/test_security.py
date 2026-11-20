@@ -50,8 +50,9 @@ async def test_health_stays_public(client, api_key):
 
 
 async def test_ingest_rate_limit(client, api_key, monkeypatch):
+    window = uuid.uuid4().int
     monkeypatch.setattr(settings, "RATE_LIMIT_PER_MINUTE", 2)
-    monkeypatch.setattr(rate_limit, "_current_window", lambda: 0)
+    monkeypatch.setattr(rate_limit, "_current_window", lambda: window)
     headers = {"X-API-Key": api_key}
     payload = email_alert(f"Status update {uuid.uuid4().hex}")
 

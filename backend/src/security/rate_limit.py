@@ -1,4 +1,3 @@
-import hashlib
 import logging
 import time
 from typing import Optional
@@ -28,7 +27,7 @@ async def limit_ingest_rate(
         return
 
     if api_key:
-        client_id = hashlib.sha256(api_key.encode("utf-8")).hexdigest()[:16]
+        client_id = f"key-{settings.api_keys.index(api_key)}"
     else:
         client_id = request.client.host if request.client else "unknown"
     counter_key = f"ratelimit:ingest:{client_id}:{_current_window()}"

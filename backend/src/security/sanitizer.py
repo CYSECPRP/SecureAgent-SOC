@@ -95,8 +95,8 @@ class InputSanitizer:
             return ""
 
         cid = content_id or str(uuid.uuid4())[:8]
-        # Neutralize any attempts by the attacker to prematurely close the boundary tag
-        escaped_text = re.sub(r"\[/?UNTRUSTED_CONTENT[^\]]*\]", "[ESCAPED_DELIMITER]", text, flags=re.IGNORECASE)
+        # Neutralize any attempt to open or close the boundary tag; matching only the tag start keeps this linear-time
+        escaped_text = re.sub(r"\[/?UNTRUSTED_CONTENT", "[ESCAPED_DELIMITER", text, flags=re.IGNORECASE)
 
         return f"[UNTRUSTED_CONTENT id=\"{cid}\"]\n{escaped_text}\n[/UNTRUSTED_CONTENT]"
 
